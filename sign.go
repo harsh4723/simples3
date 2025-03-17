@@ -20,6 +20,7 @@ import (
 )
 
 func (s3 *S3) signKeys(t time.Time) []byte {
+	fmt.Printf("AWS4 %s, short time %s, region %s, service %s \n", s3.SecretKey, t.Format(shortTimeFormat), s3.Region, serviceName)
 	h := makeHMac([]byte("AWS4"+s3.SecretKey), []byte(t.Format(shortTimeFormat)))
 	h = makeHMac(h, []byte(s3.Region))
 	h = makeHMac(h, []byte(serviceName))
@@ -29,7 +30,7 @@ func (s3 *S3) signKeys(t time.Time) []byte {
 
 func (s3 *S3) writeRequest(w io.Writer, r *http.Request) {
 	r.Header.Set("host", r.Host)
-
+	fmt.Println("Harsh host", r.Host)
 	w.Write([]byte(r.Method))
 	w.Write(newLine)
 	writeURI(w, r)
@@ -45,6 +46,7 @@ func (s3 *S3) writeRequest(w io.Writer, r *http.Request) {
 }
 
 func (s3 *S3) writeStringToSign(w io.Writer, t time.Time, r *http.Request) {
+	fmt.Printf("Harsh algo %s timeformat %s, credss %s \n", algorithm, t.Format(amzDateISO8601TimeFormat), s3.creds(t))
 	w.Write([]byte(algorithm))
 	w.Write(newLine)
 	w.Write([]byte(t.Format(amzDateISO8601TimeFormat)))
@@ -72,6 +74,7 @@ func writeURI(w io.Writer, r *http.Request) {
 	if path != "/" && slash {
 		path += "/"
 	}
+	fmt.Println("Harsh path", path)
 	w.Write([]byte(path))
 }
 
@@ -93,6 +96,7 @@ func writeQuery(w io.Writer, r *http.Request) {
 		if i > 0 {
 			w.Write([]byte{'&'})
 		}
+		fmt.Println("Harsh query", s)
 		w.Write([]byte(s))
 	}
 }
@@ -109,6 +113,7 @@ func writeHeader(w io.Writer, r *http.Request) {
 		if i > 0 {
 			w.Write(newLine)
 		}
+		fmt.Println("Harsh header", s)
 		io.WriteString(w, s)
 	}
 }
@@ -124,6 +129,7 @@ func writeHeaderList(w io.Writer, r *http.Request) {
 		if i > 0 {
 			w.Write([]byte{';'})
 		}
+		fmt.Println("Harsh header list", s)
 		w.Write([]byte(s))
 	}
 }
@@ -148,4 +154,5 @@ func writeBody(w io.Writer, r *http.Request) {
 	h := sha256.New()
 	h.Write(b)
 	fmt.Fprintf(w, "%x", h.Sum(nil))
+	fmt.Println("Harsh write body")
 }

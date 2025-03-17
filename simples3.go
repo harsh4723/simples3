@@ -15,6 +15,7 @@ import (
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
+	"net/http/httputil"
 	"regexp"
 	"strings"
 	"time"
@@ -363,12 +364,15 @@ func (s3 *S3) signRequest(req *http.Request) error {
 		t    = time.Now().UTC()
 	)
 
+	fmt.Println("Harsh date", date)
+
 	if date != "" {
 		t, err = time.Parse(http.TimeFormat, date)
 		if err != nil {
 			return err
 		}
 	}
+	fmt.Println("Harsh date amzformat", t.Format(amzDateISO8601TimeFormat))
 	req.Header.Set("Date", t.Format(amzDateISO8601TimeFormat))
 	req.Header.Set("X-Amz-Date", t.Format(amzDateISO8601TimeFormat))
 
@@ -393,13 +397,17 @@ func (s3 *S3) signRequest(req *http.Request) error {
 
 	auth := bytes.NewBufferString(algorithm)
 	auth.Write([]byte(" Credential=" + s3.AccessKey + "/" + s3.creds(t)))
+	fmt.Println("Harsh credentialsss ", " Credential="+s3.AccessKey+"/"+s3.creds(t))
 	auth.Write([]byte{',', ' '})
 	auth.Write([]byte("SignedHeaders="))
 	writeHeaderList(auth, req)
+	dump, _ := httputil.DumpRequestOut(req, true)
+	fmt.Println("Harsh reqqq ", string(dump))
 	auth.Write([]byte{',', ' '})
 	auth.Write([]byte("Signature=" + fmt.Sprintf("%x", h.Sum(nil))))
-
+	fmt.Println("Harsh  signaturee ", "Signature="+fmt.Sprintf("%x", h.Sum(nil)))
 	req.Header.Set("Authorization", auth.String())
+	fmt.Println("Harsh  auth string  ", auth.String())
 	return nil
 }
 
